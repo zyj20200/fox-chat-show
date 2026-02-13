@@ -1,0 +1,13 @@
+services:
+  fox-chat-show:
+    build: .
+    ports:
+      - "2000:2000"
+    environment:
+      - PORT=2000
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=your_password
+      - DB_NAME=your_database
+    restart: unless-stopped
