@@ -8,16 +8,18 @@ export interface DbConfig {
   database: string;
 }
 
-const defaultConfig: DbConfig = {
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "",
-};
+function getDefaultConfig(): DbConfig {
+  return {
+    host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT) || 3306,
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "",
+  };
+}
 
-let currentConfig: DbConfig = { ...defaultConfig };
-let pool: Pool = createPool(currentConfig);
+let currentConfig: DbConfig | null = null;
+let pool: Pool | null = null;
 
 function createPool(config: DbConfig): Pool {
   return mysql.createPool({
@@ -31,23 +33,31 @@ function createPool(config: DbConfig): Pool {
   });
 }
 
+function ensureInit() {
+  if (!currentConfig) {
+    currentConfig = getDefaultConfig();
+    pool = createPool(currentConfig);
+  }
+}
+
 export function getPool(): Pool {
-  return pool;
+  ensureInit();
+  return pool!;
 }
 
 export function getConfig(): DbConfig {
-  return { ...currentConfig };
+  ensureInit();
+  return { ...currentConfig! };
 }
 
 export async function setConfig(config: DbConfig): Promise<void> {
-  // Test connection before switching
   const testPool = createPool(config);
   await testPool.query("SELECT 1");
   await testPool.end();
 
-  await pool.end();
+  if (pool) await pool.end();
   currentConfig = { ...config };
   pool = createPool(currentConfig);
 }
 
-export default pool;
+export default { getPool, getConfig, setConfig };
