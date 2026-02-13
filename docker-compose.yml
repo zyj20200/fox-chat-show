@@ -5,4 +5,6 @@ services:
       - "2000:2000"
     env_file:
       - .env.local
+    environment:
+      - TZ=Asia/Shanghai
     restart: unless-stopped
